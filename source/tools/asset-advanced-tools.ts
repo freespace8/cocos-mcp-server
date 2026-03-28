@@ -4,243 +4,65 @@ export class AssetAdvancedTools implements ToolExecutor {
     getTools(): ToolDefinition[] {
         return [
             {
-                name: 'save_asset_meta',
-                description: 'Save asset meta information',
+                name: 'asset_advanced',
+                description: 'Advanced asset operations. Use action parameter: save_meta (save asset meta), generate_url (generate available URL), query_db_ready (check asset DB ready), open_external (open with external program), batch_import (batch import assets), batch_delete (batch delete assets), validate_references (validate asset references), get_dependencies (asset dependency tree), get_unused (find unused assets), compress_textures (batch compress textures), export_manifest (export asset manifest)',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        urlOrUUID: {
+                        action: {
                             type: 'string',
-                            description: 'Asset URL or UUID'
+                            description: 'Operation type',
+                            enum: ['save_meta', 'generate_url', 'query_db_ready', 'open_external', 'batch_import', 'batch_delete', 'validate_references', 'get_dependencies', 'get_unused', 'compress_textures', 'export_manifest']
                         },
-                        content: {
-                            type: 'string',
-                            description: 'Asset meta serialized content string'
-                        }
+                        urlOrUUID: { type: 'string', description: '[save_meta/open_external/get_dependencies] Asset URL or UUID' },
+                        content: { type: 'string', description: '[save_meta] Asset meta content string' },
+                        url: { type: 'string', description: '[generate_url] Asset URL' },
+                        sourceDirectory: { type: 'string', description: '[batch_import] Source directory path' },
+                        targetDirectory: { type: 'string', description: '[batch_import] Target directory URL' },
+                        fileFilter: { type: 'array', items: { type: 'string' }, description: '[batch_import] File extensions filter', default: [] },
+                        recursive: { type: 'boolean', description: '[batch_import] Include subdirectories', default: false },
+                        overwrite: { type: 'boolean', description: '[batch_import] Overwrite existing', default: false },
+                        urls: { type: 'array', items: { type: 'string' }, description: '[batch_delete] Asset URLs to delete' },
+                        directory: { type: 'string', description: '[validate_references/get_unused/compress_textures/export_manifest] Directory', default: 'db://assets' },
+                        direction: { type: 'string', description: '[get_dependencies] Direction', enum: ['dependents', 'dependencies', 'both'], default: 'dependencies' },
+                        excludeDirectories: { type: 'array', items: { type: 'string' }, description: '[get_unused] Exclude dirs', default: [] },
+                        format: { type: 'string', description: '[compress_textures] Format / [export_manifest] Export format' },
+                        quality: { type: 'number', description: '[compress_textures] Quality 0.1-1.0', default: 0.8 },
+                        includeMetadata: { type: 'boolean', description: '[export_manifest] Include metadata', default: true }
                     },
-                    required: ['urlOrUUID', 'content']
-                }
-            },
-            {
-                name: 'generate_available_url',
-                description: 'Generate an available URL based on input URL',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        url: {
-                            type: 'string',
-                            description: 'Asset URL to generate available URL for'
-                        }
-                    },
-                    required: ['url']
-                }
-            },
-            {
-                name: 'query_asset_db_ready',
-                description: 'Check if asset database is ready',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'open_asset_external',
-                description: 'Open asset with external program',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        urlOrUUID: {
-                            type: 'string',
-                            description: 'Asset URL or UUID to open'
-                        }
-                    },
-                    required: ['urlOrUUID']
-                }
-            },
-            {
-                name: 'batch_import_assets',
-                description: 'Import multiple assets in batch',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        sourceDirectory: {
-                            type: 'string',
-                            description: 'Source directory path'
-                        },
-                        targetDirectory: {
-                            type: 'string',
-                            description: 'Target directory URL'
-                        },
-                        fileFilter: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'File extensions to include (e.g., [".png", ".jpg"])',
-                            default: []
-                        },
-                        recursive: {
-                            type: 'boolean',
-                            description: 'Include subdirectories',
-                            default: false
-                        },
-                        overwrite: {
-                            type: 'boolean',
-                            description: 'Overwrite existing files',
-                            default: false
-                        }
-                    },
-                    required: ['sourceDirectory', 'targetDirectory']
-                }
-            },
-            {
-                name: 'batch_delete_assets',
-                description: 'Delete multiple assets in batch',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        urls: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Array of asset URLs to delete'
-                        }
-                    },
-                    required: ['urls']
-                }
-            },
-            {
-                name: 'validate_asset_references',
-                description: 'Validate asset references and find broken links',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        directory: {
-                            type: 'string',
-                            description: 'Directory to validate (default: entire project)',
-                            default: 'db://assets'
-                        }
-                    }
-                }
-            },
-            {
-                name: 'get_asset_dependencies',
-                description: 'Get asset dependency tree',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        urlOrUUID: {
-                            type: 'string',
-                            description: 'Asset URL or UUID'
-                        },
-                        direction: {
-                            type: 'string',
-                            description: 'Dependency direction',
-                            enum: ['dependents', 'dependencies', 'both'],
-                            default: 'dependencies'
-                        }
-                    },
-                    required: ['urlOrUUID']
-                }
-            },
-            {
-                name: 'get_unused_assets',
-                description: 'Find unused assets in project',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        directory: {
-                            type: 'string',
-                            description: 'Directory to scan (default: entire project)',
-                            default: 'db://assets'
-                        },
-                        excludeDirectories: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Directories to exclude from scan',
-                            default: []
-                        }
-                    }
-                }
-            },
-            {
-                name: 'compress_textures',
-                description: 'Batch compress texture assets',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        directory: {
-                            type: 'string',
-                            description: 'Directory containing textures',
-                            default: 'db://assets'
-                        },
-                        format: {
-                            type: 'string',
-                            description: 'Compression format',
-                            enum: ['auto', 'jpg', 'png', 'webp'],
-                            default: 'auto'
-                        },
-                        quality: {
-                            type: 'number',
-                            description: 'Compression quality (0.1-1.0)',
-                            minimum: 0.1,
-                            maximum: 1.0,
-                            default: 0.8
-                        }
-                    }
-                }
-            },
-            {
-                name: 'export_asset_manifest',
-                description: 'Export asset manifest/inventory',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        directory: {
-                            type: 'string',
-                            description: 'Directory to export manifest for',
-                            default: 'db://assets'
-                        },
-                        format: {
-                            type: 'string',
-                            description: 'Export format',
-                            enum: ['json', 'csv', 'xml'],
-                            default: 'json'
-                        },
-                        includeMetadata: {
-                            type: 'boolean',
-                            description: 'Include asset metadata',
-                            default: true
-                        }
-                    }
+                    required: ['action']
                 }
             }
         ];
     }
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
-        switch (toolName) {
-            case 'save_asset_meta':
+        const action = args.action;
+        switch (action) {
+            case 'save_meta':
                 return await this.saveAssetMeta(args.urlOrUUID, args.content);
-            case 'generate_available_url':
+            case 'generate_url':
                 return await this.generateAvailableUrl(args.url);
-            case 'query_asset_db_ready':
+            case 'query_db_ready':
                 return await this.queryAssetDbReady();
-            case 'open_asset_external':
+            case 'open_external':
                 return await this.openAssetExternal(args.urlOrUUID);
-            case 'batch_import_assets':
+            case 'batch_import':
                 return await this.batchImportAssets(args);
-            case 'batch_delete_assets':
+            case 'batch_delete':
                 return await this.batchDeleteAssets(args.urls);
-            case 'validate_asset_references':
+            case 'validate_references':
                 return await this.validateAssetReferences(args.directory);
-            case 'get_asset_dependencies':
+            case 'get_dependencies':
                 return await this.getAssetDependencies(args.urlOrUUID, args.direction);
-            case 'get_unused_assets':
+            case 'get_unused':
                 return await this.getUnusedAssets(args.directory, args.excludeDirectories);
             case 'compress_textures':
                 return await this.compressTextures(args.directory, args.format, args.quality);
-            case 'export_asset_manifest':
+            case 'export_manifest':
                 return await this.exportAssetManifest(args.directory, args.format, args.includeMetadata);
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                throw new Error(`Unknown action: ${action}`);
         }
     }
 

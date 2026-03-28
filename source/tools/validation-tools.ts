@@ -4,71 +4,41 @@ export class ValidationTools implements ToolExecutor {
     getTools(): ToolDefinition[] {
         return [
             {
-                name: 'validate_json_params',
-                description: 'Validate and fix JSON parameters before sending to other tools',
+                name: 'validation',
+                description: 'JSON validation and MCP request formatting. Use action parameter: validate_json (validate/fix JSON), safe_string (create safe string), format_request (format MCP request)',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        jsonString: {
+                        action: {
                             type: 'string',
-                            description: 'JSON string to validate and fix'
+                            description: 'Operation type',
+                            enum: ['validate_json', 'safe_string', 'format_request']
                         },
-                        expectedSchema: {
-                            type: 'object',
-                            description: 'Expected parameter schema (optional)'
-                        }
+                        jsonString: { type: 'string', description: '[validate_json] JSON string to validate' },
+                        expectedSchema: { type: 'object', description: '[validate_json] Expected schema' },
+                        value: { type: 'string', description: '[safe_string] String value to make safe' },
+                        toolName: { type: 'string', description: '[format_request] Tool name' },
+                        arguments: { type: 'object', description: '[format_request] Tool arguments' }
                     },
-                    required: ['jsonString']
-                }
-            },
-            {
-                name: 'safe_string_value',
-                description: 'Create a safe string value that won\'t cause JSON parsing issues',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        value: {
-                            type: 'string',
-                            description: 'String value to make safe'
-                        }
-                    },
-                    required: ['value']
-                }
-            },
-            {
-                name: 'format_mcp_request',
-                description: 'Format a complete MCP request with proper JSON escaping',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        toolName: {
-                            type: 'string',
-                            description: 'Tool name to call'
-                        },
-                        arguments: {
-                            type: 'object',
-                            description: 'Tool arguments'
-                        }
-                    },
-                    required: ['toolName', 'arguments']
+                    required: ['action']
                 }
             }
         ];
     }
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
-        switch (toolName) {
-            case 'validate_json_params':
+        const action = args.action;
+        switch (action) {
+            case 'validate_json':
                 return await this.validateJsonParams(args.jsonString, args.expectedSchema);
-            case 'safe_string_value':
+            case 'safe_string':
                 return await this.createSafeStringValue(args.value);
-            case 'format_mcp_request':
+            case 'format_request':
                 return await this.formatMcpRequest(args.toolName, args.arguments);
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                throw new Error(`Unknown action: ${action}`);
         }
     }
-
     private async validateJsonParams(jsonString: string, expectedSchema?: any): Promise<ToolResponse> {
         try {
             // First try to parse as-is

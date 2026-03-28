@@ -4,200 +4,64 @@ export class ReferenceImageTools implements ToolExecutor {
     getTools(): ToolDefinition[] {
         return [
             {
-                name: 'add_reference_image',
-                description: 'Add reference image(s) to scene',
+                name: 'reference_image',
+                description: 'Reference image operations. Use action parameter: add (add images), remove (remove images), switch (switch to image), set_data (set property), query_config (query config), query_current (query current), refresh (refresh display), set_position (set position), set_scale (set scale), set_opacity (set opacity), list (list all), clear_all (clear all)',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        paths: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Array of reference image absolute paths'
-                        }
-                    },
-                    required: ['paths']
-                }
-            },
-            {
-                name: 'remove_reference_image',
-                description: 'Remove reference image(s)',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        paths: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Array of reference image paths to remove (optional, removes current if empty)'
-                        }
-                    }
-                }
-            },
-            {
-                name: 'switch_reference_image',
-                description: 'Switch to specific reference image',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        path: {
+                        action: {
                             type: 'string',
-                            description: 'Reference image absolute path'
+                            description: 'Operation type',
+                            enum: ['add', 'remove', 'switch', 'set_data', 'query_config', 'query_current', 'refresh', 'set_position', 'set_scale', 'set_opacity', 'list', 'clear_all']
                         },
-                        sceneUUID: {
-                            type: 'string',
-                            description: 'Specific scene UUID (optional)'
-                        }
+                        paths: { type: 'array', items: { type: 'string' }, description: '[add/remove] Image paths' },
+                        path: { type: 'string', description: '[switch] Image path' },
+                        sceneUUID: { type: 'string', description: '[switch] Scene UUID' },
+                        key: { type: 'string', description: '[set_data] Property key', enum: ['path', 'x', 'y', 'sx', 'sy', 'opacity'] },
+                        value: { description: '[set_data] Property value' },
+                        x: { type: 'number', description: '[set_position] X offset' },
+                        y: { type: 'number', description: '[set_position] Y offset' },
+                        sx: { type: 'number', description: '[set_scale] X scale 0.1-10' },
+                        sy: { type: 'number', description: '[set_scale] Y scale 0.1-10' },
+                        opacity: { type: 'number', description: '[set_opacity] Opacity 0-1' }
                     },
-                    required: ['path']
-                }
-            },
-            {
-                name: 'set_reference_image_data',
-                description: 'Set reference image transform and display properties',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        key: {
-                            type: 'string',
-                            description: 'Property key',
-                            enum: ['path', 'x', 'y', 'sx', 'sy', 'opacity']
-                        },
-                        value: {
-                            description: 'Property value (path: string, x/y/sx/sy: number, opacity: number 0-1)'
-                        }
-                    },
-                    required: ['key', 'value']
-                }
-            },
-            {
-                name: 'query_reference_image_config',
-                description: 'Query reference image configuration',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'query_current_reference_image',
-                description: 'Query current reference image data',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'refresh_reference_image',
-                description: 'Refresh reference image display',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'set_reference_image_position',
-                description: 'Set reference image position',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        x: {
-                            type: 'number',
-                            description: 'X offset'
-                        },
-                        y: {
-                            type: 'number',
-                            description: 'Y offset'
-                        }
-                    },
-                    required: ['x', 'y']
-                }
-            },
-            {
-                name: 'set_reference_image_scale',
-                description: 'Set reference image scale',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        sx: {
-                            type: 'number',
-                            description: 'X scale',
-                            minimum: 0.1,
-                            maximum: 10
-                        },
-                        sy: {
-                            type: 'number',
-                            description: 'Y scale',
-                            minimum: 0.1,
-                            maximum: 10
-                        }
-                    },
-                    required: ['sx', 'sy']
-                }
-            },
-            {
-                name: 'set_reference_image_opacity',
-                description: 'Set reference image opacity',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        opacity: {
-                            type: 'number',
-                            description: 'Opacity (0.0 to 1.0)',
-                            minimum: 0,
-                            maximum: 1
-                        }
-                    },
-                    required: ['opacity']
-                }
-            },
-            {
-                name: 'list_reference_images',
-                description: 'List all available reference images',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'clear_all_reference_images',
-                description: 'Clear all reference images',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
+                    required: ['action']
                 }
             }
         ];
     }
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
-        switch (toolName) {
-            case 'add_reference_image':
+        const action = args.action;
+        switch (action) {
+            case 'add':
                 return await this.addReferenceImage(args.paths);
-            case 'remove_reference_image':
+            case 'remove':
                 return await this.removeReferenceImage(args.paths);
-            case 'switch_reference_image':
+            case 'switch':
                 return await this.switchReferenceImage(args.path, args.sceneUUID);
-            case 'set_reference_image_data':
+            case 'set_data':
                 return await this.setReferenceImageData(args.key, args.value);
-            case 'query_reference_image_config':
+            case 'query_config':
                 return await this.queryReferenceImageConfig();
-            case 'query_current_reference_image':
+            case 'query_current':
                 return await this.queryCurrentReferenceImage();
-            case 'refresh_reference_image':
+            case 'refresh':
                 return await this.refreshReferenceImage();
-            case 'set_reference_image_position':
+            case 'set_position':
                 return await this.setReferenceImagePosition(args.x, args.y);
-            case 'set_reference_image_scale':
+            case 'set_scale':
                 return await this.setReferenceImageScale(args.sx, args.sy);
-            case 'set_reference_image_opacity':
+            case 'set_opacity':
                 return await this.setReferenceImageOpacity(args.opacity);
-            case 'list_reference_images':
+            case 'list':
                 return await this.listReferenceImages();
-            case 'clear_all_reference_images':
+            case 'clear_all':
                 return await this.clearAllReferenceImages();
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                throw new Error(`Unknown action: ${action}`);
         }
     }
-
     private async addReferenceImage(paths: string[]): Promise<ToolResponse> {
         return new Promise((resolve) => {
             Editor.Message.request('reference-image', 'add-image', paths).then(() => {
