@@ -4,81 +4,43 @@ export class ServerTools implements ToolExecutor {
     getTools(): ToolDefinition[] {
         return [
             {
-                name: 'query_server_ip_list',
-                description: 'Query server IP list',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'query_sorted_server_ip_list',
-                description: 'Get sorted server IP list',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'query_server_port',
-                description: 'Query editor server current port',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'get_server_status',
-                description: 'Get comprehensive server status information',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'check_server_connectivity',
-                description: 'Check server connectivity and network status',
+                name: 'server_info',
+                description: 'Server and network information. Use action parameter: query_ip_list (IP list), query_sorted_ip_list (sorted IP list), query_port (server port), get_status (server status), check_connectivity (connectivity check), get_network_interfaces (network interfaces)',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        timeout: {
-                            type: 'number',
-                            description: 'Timeout in milliseconds',
-                            default: 5000
-                        }
-                    }
-                }
-            },
-            {
-                name: 'get_network_interfaces',
-                description: 'Get available network interfaces',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
+                        action: {
+                            type: 'string',
+                            description: 'Operation type',
+                            enum: ['query_ip_list', 'query_sorted_ip_list', 'query_port', 'get_status', 'check_connectivity', 'get_network_interfaces']
+                        },
+                        timeout: { type: 'number', description: '[check_connectivity] Timeout in ms', default: 5000 }
+                    },
+                    required: ['action']
                 }
             }
         ];
     }
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
-        switch (toolName) {
-            case 'query_server_ip_list':
+        const action = args.action;
+        switch (action) {
+            case 'query_ip_list':
                 return await this.queryServerIPList();
-            case 'query_sorted_server_ip_list':
+            case 'query_sorted_ip_list':
                 return await this.querySortedServerIPList();
-            case 'query_server_port':
+            case 'query_port':
                 return await this.queryServerPort();
-            case 'get_server_status':
+            case 'get_status':
                 return await this.getServerStatus();
-            case 'check_server_connectivity':
+            case 'check_connectivity':
                 return await this.checkServerConnectivity(args.timeout);
             case 'get_network_interfaces':
                 return await this.getNetworkInterfaces();
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                throw new Error(`Unknown action: ${action}`);
         }
     }
-
     private async queryServerIPList(): Promise<ToolResponse> {
         return new Promise((resolve) => {
             Editor.Message.request('server', 'query-ip-list').then((ipList: string[]) => {

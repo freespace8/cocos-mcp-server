@@ -32,168 +32,40 @@ export class DebugTools implements ToolExecutor {
     getTools(): ToolDefinition[] {
         return [
             {
-                name: 'get_console_logs',
-                description: 'Get editor console logs',
+                name: 'debug_tools',
+                description: 'Debug and diagnostics operations. Use action parameter: get_logs (get console logs), clear_console (clear console), execute_script (run JS in scene), get_node_tree (debug node tree), get_performance (performance stats), validate_scene (validate scene), get_editor_info (editor info), get_project_logs (project log file), get_log_file_info (log file info), search_logs (search project logs)',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        limit: {
-                            type: 'number',
-                            description: 'Number of recent logs to retrieve',
-                            default: 100
+                        action: {
+                            type: 'string',
+                            description: 'Operation type',
+                            enum: ['get_logs', 'clear_console', 'execute_script', 'get_node_tree', 'get_performance', 'validate_scene', 'get_editor_info', 'get_project_logs', 'get_log_file_info', 'search_logs']
                         },
-                        filter: {
-                            type: 'string',
-                            description: 'Filter logs by type',
-                            enum: ['all', 'log', 'warn', 'error', 'info'],
-                            default: 'all'
-                        }
-                    }
-                }
-            },
-            {
-                name: 'clear_console',
-                description: 'Clear editor console',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'execute_script',
-                description: 'Execute JavaScript in scene context',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        script: {
-                            type: 'string',
-                            description: 'JavaScript code to execute'
-                        }
+                        limit: { type: 'number', description: '[get_logs] Number of recent logs', default: 100 },
+                        filter: { type: 'string', description: '[get_logs] Filter by type', enum: ['all', 'log', 'warn', 'error', 'info'], default: 'all' },
+                        script: { type: 'string', description: '[execute_script] JavaScript code to execute' },
+                        rootUuid: { type: 'string', description: '[get_node_tree] Root node UUID' },
+                        maxDepth: { type: 'number', description: '[get_node_tree] Maximum tree depth', default: 10 },
+                        checkMissingAssets: { type: 'boolean', description: '[validate_scene] Check missing asset refs', default: true },
+                        checkPerformance: { type: 'boolean', description: '[validate_scene] Check performance issues', default: true },
+                        lines: { type: 'number', description: '[get_project_logs] Lines to read', default: 100 },
+                        filterKeyword: { type: 'string', description: '[get_project_logs] Filter keyword' },
+                        logLevel: { type: 'string', description: '[get_project_logs] Log level filter', enum: ['ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'ALL'], default: 'ALL' },
+                        pattern: { type: 'string', description: '[search_logs] Search pattern (regex)' },
+                        maxResults: { type: 'number', description: '[search_logs] Max results', default: 20 },
+                        contextLines: { type: 'number', description: '[search_logs] Context lines around match', default: 2 }
                     },
-                    required: ['script']
-                }
-            },
-            {
-                name: 'get_node_tree',
-                description: 'Get detailed node tree for debugging',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        rootUuid: {
-                            type: 'string',
-                            description: 'Root node UUID (optional, uses scene root if not provided)'
-                        },
-                        maxDepth: {
-                            type: 'number',
-                            description: 'Maximum tree depth',
-                            default: 10
-                        }
-                    }
-                }
-            },
-            {
-                name: 'get_performance_stats',
-                description: 'Get performance statistics',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'validate_scene',
-                description: 'Validate current scene for issues',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        checkMissingAssets: {
-                            type: 'boolean',
-                            description: 'Check for missing asset references',
-                            default: true
-                        },
-                        checkPerformance: {
-                            type: 'boolean',
-                            description: 'Check for performance issues',
-                            default: true
-                        }
-                    }
-                }
-            },
-            {
-                name: 'get_editor_info',
-                description: 'Get editor and environment information',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'get_project_logs',
-                description: 'Get project logs from temp/logs/project.log file',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        lines: {
-                            type: 'number',
-                            description: 'Number of lines to read from the end of the log file (default: 100)',
-                            default: 100,
-                            minimum: 1,
-                            maximum: 10000
-                        },
-                        filterKeyword: {
-                            type: 'string',
-                            description: 'Filter logs containing specific keyword (optional)'
-                        },
-                        logLevel: {
-                            type: 'string',
-                            description: 'Filter by log level',
-                            enum: ['ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE', 'ALL'],
-                            default: 'ALL'
-                        }
-                    }
-                }
-            },
-            {
-                name: 'get_log_file_info',
-                description: 'Get information about the project log file',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'search_project_logs',
-                description: 'Search for specific patterns or errors in project logs',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        pattern: {
-                            type: 'string',
-                            description: 'Search pattern (supports regex)'
-                        },
-                        maxResults: {
-                            type: 'number',
-                            description: 'Maximum number of matching results',
-                            default: 20,
-                            minimum: 1,
-                            maximum: 100
-                        },
-                        contextLines: {
-                            type: 'number',
-                            description: 'Number of context lines to show around each match',
-                            default: 2,
-                            minimum: 0,
-                            maximum: 10
-                        }
-                    },
-                    required: ['pattern']
+                    required: ['action']
                 }
             }
         ];
     }
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
-        switch (toolName) {
-            case 'get_console_logs':
+        const action = args.action;
+        switch (action) {
+            case 'get_logs':
                 return await this.getConsoleLogs(args.limit, args.filter);
             case 'clear_console':
                 return await this.clearConsole();
@@ -201,7 +73,7 @@ export class DebugTools implements ToolExecutor {
                 return await this.executeScript(args.script);
             case 'get_node_tree':
                 return await this.getNodeTree(args.rootUuid, args.maxDepth);
-            case 'get_performance_stats':
+            case 'get_performance':
                 return await this.getPerformanceStats();
             case 'validate_scene':
                 return await this.validateScene(args);
@@ -211,10 +83,10 @@ export class DebugTools implements ToolExecutor {
                 return await this.getProjectLogs(args.lines, args.filterKeyword, args.logLevel);
             case 'get_log_file_info':
                 return await this.getLogFileInfo();
-            case 'search_project_logs':
+            case 'search_logs':
                 return await this.searchProjectLogs(args.pattern, args.maxResults, args.contextLines);
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                throw new Error(`Unknown action: ${action}`);
         }
     }
 

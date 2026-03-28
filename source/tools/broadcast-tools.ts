@@ -11,103 +11,50 @@ export class BroadcastTools implements ToolExecutor {
     getTools(): ToolDefinition[] {
         return [
             {
-                name: 'get_broadcast_log',
-                description: 'Get recent broadcast messages log',
+                name: 'broadcast',
+                description: 'Broadcast message operations. Use action parameter: get_log (get recent messages), listen (start listening), stop_listening (stop listening), clear_log (clear log), get_listeners (get active listeners)',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        limit: {
-                            type: 'number',
-                            description: 'Number of recent messages to return',
-                            default: 50
+                        action: {
+                            type: 'string',
+                            description: 'Operation type',
+                            enum: ['get_log', 'listen', 'stop_listening', 'clear_log', 'get_listeners']
                         },
-                        messageType: {
-                            type: 'string',
-                            description: 'Filter by message type (optional)'
-                        }
-                    }
-                }
-            },
-            {
-                name: 'listen_broadcast',
-                description: 'Start listening for specific broadcast messages',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        messageType: {
-                            type: 'string',
-                            description: 'Message type to listen for'
-                        }
+                        limit: { type: 'number', description: '[get_log] Number of recent messages', default: 50 },
+                        messageType: { type: 'string', description: '[get_log/listen/stop_listening] Message type filter' }
                     },
-                    required: ['messageType']
-                }
-            },
-            {
-                name: 'stop_listening',
-                description: 'Stop listening for specific broadcast messages',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        messageType: {
-                            type: 'string',
-                            description: 'Message type to stop listening for'
-                        }
-                    },
-                    required: ['messageType']
-                }
-            },
-            {
-                name: 'clear_broadcast_log',
-                description: 'Clear the broadcast messages log',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'get_active_listeners',
-                description: 'Get list of active broadcast listeners',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
+                    required: ['action']
                 }
             }
         ];
     }
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
-        switch (toolName) {
-            case 'get_broadcast_log':
+        const action = args.action;
+        switch (action) {
+            case 'get_log':
                 return await this.getBroadcastLog(args.limit, args.messageType);
-            case 'listen_broadcast':
+            case 'listen':
                 return await this.listenBroadcast(args.messageType);
             case 'stop_listening':
                 return await this.stopListening(args.messageType);
-            case 'clear_broadcast_log':
+            case 'clear_log':
                 return await this.clearBroadcastLog();
-            case 'get_active_listeners':
+            case 'get_listeners':
                 return await this.getActiveListeners();
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                throw new Error(`Unknown action: ${action}`);
         }
     }
 
     private setupBroadcastListeners(): void {
-        // 设置预定义的重要广播消息监听
         const importantMessages = [
-            'build-worker:ready',
-            'build-worker:closed',
-            'scene:ready',
-            'scene:close',
-            'scene:light-probe-edit-mode-changed',
-            'scene:light-probe-bounding-box-edit-mode-changed',
-            'asset-db:ready',
-            'asset-db:close',
-            'asset-db:asset-add',
-            'asset-db:asset-change',
-            'asset-db:asset-delete'
+            'build-worker:ready', 'build-worker:closed',
+            'scene:ready', 'scene:close',
+            'asset-db:ready', 'asset-db:close',
+            'asset-db:asset-add', 'asset-db:asset-change', 'asset-db:asset-delete'
         ];
-
         importantMessages.forEach(messageType => {
             this.addBroadcastListener(messageType);
         });
@@ -115,27 +62,16 @@ export class BroadcastTools implements ToolExecutor {
 
     private addBroadcastListener(messageType: string): void {
         const listener = (data: any) => {
-            this.messageLog.push({
-                message: messageType,
-                data: data,
-                timestamp: Date.now()
-            });
-
-            // 保持日志大小在合理范围内
+            this.messageLog.push({ message: messageType, data: data, timestamp: Date.now() });
             if (this.messageLog.length > 1000) {
                 this.messageLog = this.messageLog.slice(-500);
             }
-
             console.log(`[Broadcast] ${messageType}:`, data);
         };
-
         if (!this.listeners.has(messageType)) {
             this.listeners.set(messageType, []);
         }
         this.listeners.get(messageType)!.push(listener);
-
-        // 注册 Editor 消息监听 - 暂时注释掉，Editor.Message API可能不支持
-        // Editor.Message.on(messageType, listener);
         console.log(`[BroadcastTools] Added listener for ${messageType} (simulated)`);
     }
 
@@ -143,7 +79,6 @@ export class BroadcastTools implements ToolExecutor {
         const listeners = this.listeners.get(messageType);
         if (listeners) {
             listeners.forEach(listener => {
-                // Editor.Message.off(messageType, listener);
                 console.log(`[BroadcastTools] Removed listener for ${messageType} (simulated)`);
             });
             this.listeners.delete(messageType);

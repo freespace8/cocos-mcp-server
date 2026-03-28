@@ -4,229 +4,36 @@ export class SceneViewTools implements ToolExecutor {
     getTools(): ToolDefinition[] {
         return [
             {
-                name: 'change_gizmo_tool',
-                description: 'Change Gizmo tool',
+                name: 'scene_view_control',
+                description: 'Scene view control operations. Use action parameter: change_gizmo_tool, query_gizmo_tool, change_gizmo_pivot, query_gizmo_pivot, query_gizmo_view_mode, change_gizmo_coordinate, query_gizmo_coordinate, change_view_mode, query_view_mode, set_grid_visible, query_grid_visible, set_icon_gizmo_3d, query_icon_gizmo_3d, set_icon_gizmo_size, query_icon_gizmo_size, focus_camera, align_camera, align_view, get_status, reset',
                 inputSchema: {
                     type: 'object',
                     properties: {
-                        name: {
+                        action: {
                             type: 'string',
-                            description: 'Tool name',
-                            enum: ['position', 'rotation', 'scale', 'rect']
-                        }
+                            description: 'Operation type',
+                            enum: ['change_gizmo_tool', 'query_gizmo_tool', 'change_gizmo_pivot', 'query_gizmo_pivot', 'query_gizmo_view_mode', 'change_gizmo_coordinate', 'query_gizmo_coordinate', 'change_view_mode', 'query_view_mode', 'set_grid_visible', 'query_grid_visible', 'set_icon_gizmo_3d', 'query_icon_gizmo_3d', 'set_icon_gizmo_size', 'query_icon_gizmo_size', 'focus_camera', 'align_camera', 'align_view', 'get_status', 'reset']
+                        },
+                        name: { type: 'string', description: '[change_gizmo_tool] Tool name (position/rotation/scale/rect). [change_gizmo_pivot] Pivot (pivot/center)' },
+                        type: { type: 'string', description: '[change_gizmo_coordinate] Coordinate system (local/global)' },
+                        is2D: { type: 'boolean', description: '[change_view_mode] 2D mode (true) or 3D mode (false)' },
+                        visible: { type: 'boolean', description: '[set_grid_visible] Grid visibility' },
+                        is3D: { type: 'boolean', description: '[set_icon_gizmo_3d] 3D mode' },
+                        size: { type: 'number', description: '[set_icon_gizmo_size] Icon gizmo size (10-100)' },
+                        uuids: { description: '[focus_camera] Node UUIDs to focus on (array or null)' }
                     },
-                    required: ['name']
-                }
-            },
-            {
-                name: 'query_gizmo_tool_name',
-                description: 'Get current Gizmo tool name',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'change_gizmo_pivot',
-                description: 'Change transform pivot point',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        name: {
-                            type: 'string',
-                            description: 'Pivot point',
-                            enum: ['pivot', 'center']
-                        }
-                    },
-                    required: ['name']
-                }
-            },
-            {
-                name: 'query_gizmo_pivot',
-                description: 'Get current Gizmo pivot point',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'query_gizmo_view_mode',
-                description: 'Query view mode (view/select)',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'change_gizmo_coordinate',
-                description: 'Change coordinate system',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        type: {
-                            type: 'string',
-                            description: 'Coordinate system',
-                            enum: ['local', 'global']
-                        }
-                    },
-                    required: ['type']
-                }
-            },
-            {
-                name: 'query_gizmo_coordinate',
-                description: 'Get current coordinate system',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'change_view_mode_2d_3d',
-                description: 'Change 2D/3D view mode',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        is2D: {
-                            type: 'boolean',
-                            description: '2D/3D view mode (true for 2D, false for 3D)'
-                        }
-                    },
-                    required: ['is2D']
-                }
-            },
-            {
-                name: 'query_view_mode_2d_3d',
-                description: 'Get current view mode',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'set_grid_visible',
-                description: 'Show/hide grid',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        visible: {
-                            type: 'boolean',
-                            description: 'Grid visibility'
-                        }
-                    },
-                    required: ['visible']
-                }
-            },
-            {
-                name: 'query_grid_visible',
-                description: 'Query grid visibility status',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'set_icon_gizmo_3d',
-                description: 'Set IconGizmo to 3D or 2D mode',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        is3D: {
-                            type: 'boolean',
-                            description: '3D/2D IconGizmo (true for 3D, false for 2D)'
-                        }
-                    },
-                    required: ['is3D']
-                }
-            },
-            {
-                name: 'query_icon_gizmo_3d',
-                description: 'Query IconGizmo mode',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'set_icon_gizmo_size',
-                description: 'Set IconGizmo size',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        size: {
-                            type: 'number',
-                            description: 'IconGizmo size',
-                            minimum: 10,
-                            maximum: 100
-                        }
-                    },
-                    required: ['size']
-                }
-            },
-            {
-                name: 'query_icon_gizmo_size',
-                description: 'Query IconGizmo size',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'focus_camera_on_nodes',
-                description: 'Focus scene camera on nodes',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        uuids: {
-                            oneOf: [
-                                { type: 'array', items: { type: 'string' } },
-                                { type: 'null' }
-                            ],
-                            description: 'Node UUIDs to focus on (null for all)'
-                        }
-                    },
-                    required: ['uuids']
-                }
-            },
-            {
-                name: 'align_camera_with_view',
-                description: 'Apply scene camera position and angle to selected node',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'align_view_with_node',
-                description: 'Apply selected node position and angle to current view',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'get_scene_view_status',
-                description: 'Get comprehensive scene view status',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
-                }
-            },
-            {
-                name: 'reset_scene_view',
-                description: 'Reset scene view to default settings',
-                inputSchema: {
-                    type: 'object',
-                    properties: {}
+                    required: ['action']
                 }
             }
         ];
     }
 
     async execute(toolName: string, args: any): Promise<ToolResponse> {
-        switch (toolName) {
+        const action = args.action;
+        switch (action) {
             case 'change_gizmo_tool':
                 return await this.changeGizmoTool(args.name);
-            case 'query_gizmo_tool_name':
+            case 'query_gizmo_tool':
                 return await this.queryGizmoToolName();
             case 'change_gizmo_pivot':
                 return await this.changeGizmoPivot(args.name);
@@ -238,9 +45,9 @@ export class SceneViewTools implements ToolExecutor {
                 return await this.changeGizmoCoordinate(args.type);
             case 'query_gizmo_coordinate':
                 return await this.queryGizmoCoordinate();
-            case 'change_view_mode_2d_3d':
+            case 'change_view_mode':
                 return await this.changeViewMode2D3D(args.is2D);
-            case 'query_view_mode_2d_3d':
+            case 'query_view_mode':
                 return await this.queryViewMode2D3D();
             case 'set_grid_visible':
                 return await this.setGridVisible(args.visible);
@@ -254,21 +61,20 @@ export class SceneViewTools implements ToolExecutor {
                 return await this.setIconGizmoSize(args.size);
             case 'query_icon_gizmo_size':
                 return await this.queryIconGizmoSize();
-            case 'focus_camera_on_nodes':
+            case 'focus_camera':
                 return await this.focusCameraOnNodes(args.uuids);
-            case 'align_camera_with_view':
+            case 'align_camera':
                 return await this.alignCameraWithView();
-            case 'align_view_with_node':
+            case 'align_view':
                 return await this.alignViewWithNode();
-            case 'get_scene_view_status':
+            case 'get_status':
                 return await this.getSceneViewStatus();
-            case 'reset_scene_view':
+            case 'reset':
                 return await this.resetSceneView();
             default:
-                throw new Error(`Unknown tool: ${toolName}`);
+                throw new Error(`Unknown action: ${action}`);
         }
     }
-
     private async changeGizmoTool(name: string): Promise<ToolResponse> {
         return new Promise((resolve) => {
             Editor.Message.request('scene', 'change-gizmo-tool', name).then(() => {
