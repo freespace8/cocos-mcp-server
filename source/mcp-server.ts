@@ -16,6 +16,7 @@ import { SceneViewTools } from './tools/scene-view-tools';
 import { ReferenceImageTools } from './tools/reference-image-tools';
 import { AssetAdvancedTools } from './tools/asset-advanced-tools';
 import { ValidationTools } from './tools/validation-tools';
+import { MCPProtocolAdapter } from './mcp-protocol-adapter';
 
 export class MCPServer {
     private settings: MCPServerSettings;
@@ -24,6 +25,7 @@ export class MCPServer {
     private tools: Record<string, any> = {};
     private toolsList: ToolDefinition[] = [];
     private enabledTools: any[] = []; // 存储启用的工具列表
+    private readonly protocolAdapter = new MCPProtocolAdapter();
 
     constructor(settings: MCPServerSettings) {
         this.settings = settings;
@@ -180,7 +182,9 @@ export class MCPServer {
         }
         
         try {
-            if (pathname === '/mcp' && req.method === 'POST') {
+            if (pathname === '/mcp' && req.method === 'GET') {
+                this.writeHttpResponse(res, this.protocolAdapter.createGetMcpResponse());
+            } else if (pathname === '/mcp' && req.method === 'POST') {
                 await this.handleMCPRequest(req, res);
             } else if (pathname === '/health' && req.method === 'GET') {
                 res.writeHead(200);
@@ -225,9 +229,11 @@ export class MCPServer {
                     }
                 }
                 
-                const response = await this.handleMessage(message);
-                res.writeHead(200);
-                res.end(JSON.stringify(response));
+                const response = await this.protocolAdapter.handleMessage(message, {
+                    getAvailableTools: () => this.getAvailableTools(),
+                    executeToolCall: (toolName: string, args: any) => this.executeToolCall(toolName, args)
+                });
+                this.writeHttpResponse(res, response);
             } catch (error: any) {
                 console.error('Error handling MCP request:', error);
                 res.writeHead(400);
@@ -241,55 +247,6 @@ export class MCPServer {
                 }));
             }
         });
-    }
-
-    private async handleMessage(message: any): Promise<any> {
-        const { id, method, params } = message;
-
-        try {
-            let result: any;
-
-            switch (method) {
-                case 'tools/list':
-                    result = { tools: this.getAvailableTools() };
-                    break;
-                case 'tools/call':
-                    const { name, arguments: args } = params;
-                    const toolResult = await this.executeToolCall(name, args);
-                    result = { content: [{ type: 'text', text: JSON.stringify(toolResult) }] };
-                    break;
-                case 'initialize':
-                    // MCP initialization
-                    result = {
-                        protocolVersion: '2024-11-05',
-                        capabilities: {
-                            tools: {}
-                        },
-                        serverInfo: {
-                            name: 'cocos-mcp-server',
-                            version: '1.0.0'
-                        }
-                    };
-                    break;
-                default:
-                    throw new Error(`Unknown method: ${method}`);
-            }
-
-            return {
-                jsonrpc: '2.0',
-                id,
-                result
-            };
-        } catch (error: any) {
-            return {
-                jsonrpc: '2.0',
-                id,
-                error: {
-                    code: -32603,
-                    message: error.message
-                }
-            };
-        }
     }
 
     private fixCommonJsonIssues(jsonStr: string): string {
@@ -311,6 +268,23 @@ export class MCPServer {
             .replace(/\t/g, '\\t');
         
         return fixed;
+    }
+
+    private writeHttpResponse(res: http.ServerResponse, response: { statusCode: number; body?: unknown; headers?: Record<string, string> }): void {
+        if (response.headers) {
+            for (const [headerName, headerValue] of Object.entries(response.headers)) {
+                res.setHeader(headerName, headerValue);
+            }
+        }
+
+        res.writeHead(response.statusCode);
+
+        if (response.body === undefined) {
+            res.end();
+            return;
+        }
+
+        res.end(JSON.stringify(response.body));
     }
 
     public stop(): void {
