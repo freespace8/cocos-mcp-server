@@ -152,6 +152,19 @@ cocos store：https://store.cocos.com/app/detail/7941
 claude mcp add --transport http cocos-creator http://127.0.0.1:3000/mcp（使用你自己配置的端口号）
 ```
 
+**Codex CLI 配置：**
+
+```toml
+[mcp_servers.cocos-creator]
+url = "http://127.0.0.1:3000/mcp"
+```
+
+也可以用命令行添加：
+
+```bash
+codex mcp add cocos-creator --url http://127.0.0.1:3000/mcp
+```
+
 **Claude客户端配置：**
 
 ```
@@ -423,5 +436,4 @@ npm run build
 
 ## 联系我加入群
 <img alt="image" src="https://github.com/user-attachments/assets/a276682c-4586-480c-90e5-6db132e89e0f" width="400" height="400" />
-
 

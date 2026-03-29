@@ -153,6 +153,19 @@ Cocos store: https://store.cocos.com/app/detail/7941
 claude mcp add --transport http cocos-creator http://127.0.0.1:3000/mcp (use your configured port number)
 ```
 
+**Codex CLI configuration:**
+
+```toml
+[mcp_servers.cocos-creator]
+url = "http://127.0.0.1:3000/mcp"
+```
+
+Or add it from the command line:
+
+```bash
+codex mcp add cocos-creator --url http://127.0.0.1:3000/mcp
+```
+
 **Claude client configuration:**
 
 ```
@@ -424,4 +437,3 @@ This plug-in is for Cocos Creator project use, and the source code is packaged t
 
 ## Contact me to join the group
 <img alt="image" src="https://github.com/user-attachments/assets/a276682c-4586-480c-90e5-6db132e89e0f" width="400" height="400" />
-
